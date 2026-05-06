@@ -1,0 +1,221 @@
+// Silsila — Hunza Valley Living Ancestry Archive
+// Full database schema for genealogy platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ============================================================
+// VILLAGE — Geographic settlements in Hunza Valley
+// ============================================================
+model Village {
+  id                  String   @id @default(uuid())
+  name                String   @unique
+  slug                String   @unique
+  region              String   @default("Hunza")
+  lat                 Float?
+  lng                 Float?
+  historicalNotes     String?  @map("historical_notes")
+  documentationStatus String   @default("pending") @map("documentation_status") // complete | partial | pending
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  persons Person[]
+  clans   Clan[]
+  users   User[]
+
+  @@map("villages")
+}
+
+// ============================================================
+// CLAN — Family clans/tribes within villages
+// ============================================================
+model Clan {
+  id                 String   @id @default(uuid())
+  name               String
+  slug               String   @unique
+  originStory        String?  @map("origin_story")
+  foundingAncestorId String?  @map("founding_ancestor_id")
+  villageId          String?  @map("village_id")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  foundingAncestor Person?  @relation("ClanFounder", fields: [foundingAncestorId], references: [id])
+  village          Village? @relation(fields: [villageId], references: [id])
+  persons          Person[] @relation("ClanMembers")
+
+  @@map("clans")
+}
+
+// ============================================================
+// PERSON — Individual people in the genealogy
+// ============================================================
+model Person {
+  id                    String    @id @default(uuid())
+  fullName              String    @map("full_name")
+  birthName             String?   @map("birth_name")
+  gender                String    @default("unknown") // male | female | unknown
+  birthYear             Int?      @map("birth_year")
+  birthYearApproximate  Boolean   @default(false) @map("birth_year_approximate")
+  birthPlace            String?   @map("birth_place")
+  deathYear             Int?      @map("death_year")
+  deathPlace            String?   @map("death_place")
+  villageId             String?   @map("village_id")
+  clanId                String?   @map("clan_id")
+  bio                   String?
+  photoUrl              String?   @map("photo_url")
+  isLiving              Boolean   @default(true) @map("is_living")
+  privacyLevel          String    @default("public") @map("privacy_level") // public | family | private
+  addedById             String?   @map("added_by")
+  verified              Boolean   @default(false)
+  deletedAt             DateTime? @map("deleted_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  village       Village? @relation(fields: [villageId], references: [id])
+  clan          Clan?    @relation("ClanMembers", fields: [clanId], references: [id])
+  addedBy       User?    @relation("PersonAddedBy", fields: [addedById], references: [id])
+  foundedClans  Clan[]   @relation("ClanFounder")
+
+  // Relationships where this person is person_a
+  relationshipsAsA Relationship[] @relation("PersonA")
+  // Relationships where this person is person_b
+  relationshipsAsB Relationship[] @relation("PersonB")
+
+  mediaItems    MediaItem[]
+  sources       Source[]
+  contributions Contribution[]
+
+  @@map("persons")
+}
+
+// ============================================================
+// RELATIONSHIP — Connections between people
+// ============================================================
+model Relationship {
+  id               String   @id @default(uuid())
+  personAId        String   @map("person_a_id")
+  personBId        String   @map("person_b_id")
+  relationshipType String   @map("relationship_type") // parent | spouse | sibling
+  startYear        Int?     @map("start_year")
+  endYear          Int?     @map("end_year")
+  isVerified       Boolean  @default(false) @map("is_verified")
+  notes            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  personA Person @relation("PersonA", fields: [personAId], references: [id], onDelete: Cascade)
+  personB Person @relation("PersonB", fields: [personBId], references: [id], onDelete: Cascade)
+
+  @@unique([personAId, personBId, relationshipType])
+  @@map("relationships")
+}
+
+// ============================================================
+// USER — Application users with roles
+// ============================================================
+model User {
+  id                 String   @id @default(uuid())
+  name               String
+  email              String   @unique
+  passwordHash       String?  @map("password_hash")
+  role               String   @default("viewer") // viewer | contributor | village_admin | super_admin
+  villageId          String?  @map("village_id")
+  verifiedContributor Boolean @default(false) @map("verified_contributor")
+  emailVerified      Boolean  @default(false) @map("email_verified")
+  image              String?
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  village       Village? @relation(fields: [villageId], references: [id])
+  addedPersons  Person[] @relation("PersonAddedBy")
+  uploadedMedia MediaItem[] @relation("MediaUploader")
+  addedSources  Source[]    @relation("SourceAdder")
+
+  submittedContributions Contribution[] @relation("ContributionSubmitter")
+  reviewedContributions  Contribution[] @relation("ContributionReviewer")
+  auditLogs              AuditLog[]
+
+  @@map("users")
+}
+
+// ============================================================
+// MEDIA ITEM — Photos, documents, audio attached to persons
+// ============================================================
+model MediaItem {
+  id         String   @id @default(uuid())
+  personId   String   @map("person_id")
+  type       String   // photo | document | audio
+  url        String
+  caption    String?
+  year       Int?
+  uploadedBy String?  @map("uploaded_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+  uploader User?  @relation("MediaUploader", fields: [uploadedBy], references: [id])
+
+  @@map("media_items")
+}
+
+// ============================================================
+// CONTRIBUTION — Community-submitted changes
+// ============================================================
+model Contribution {
+  id           String    @id @default(uuid())
+  submittedBy  String    @map("submitted_by")
+  entityType   String    @map("entity_type") // person | relationship | clan | village
+  entityId     String?   @map("entity_id")
+  action       String    // create | update | delete
+  changeData   String    @map("change_data") // JSON string (SQLite doesn't have native JSON)
+  status       String    @default("pending") // pending | approved | rejected | changes_requested
+  reviewedBy   String?   @map("reviewed_by")
+  reviewNotes  String?   @map("review_notes")
+  personId     String?   @map("person_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  reviewedAt   DateTime? @map("reviewed_at")
+
+  submitter User    @relation("ContributionSubmitter", fields: [submittedBy], references: [id])
+  reviewer  User?   @relation("ContributionReviewer", fields: [reviewedBy], references: [id])
+  person    Person? @relation(fields: [personId], references: [id])
+
+  @@map("contributions")
+}
+
+// ============================================================
+// SOURCE — Citations for person data
+// ============================================================
+model Source {
+  id               String   @id @default(uuid())
+  title            String
+  type             String   // oral | document | nadra | book | other
+  personId         String?  @map("person_id")
+  reliabilityScore Int?     @map("reliability_score") // 1-5
+  addedById        String?  @map("added_by")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  person  Person? @relation(fields: [personId], references: [id], onDelete: Cascade)
+  addedBy User?   @relation("SourceAdder", fields: [addedById], references: [id])
+
+  @@map("sources")
+}
+
+// ============================================================
+// AUDIT LOG — Track all data changes
+// ============================================================
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  action     String   // create | update | delete
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  oldData    String?  @map("old_data") // JSON string
+  newData    String?  @map("new_data") // JSON string
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
