@@ -12,6 +12,8 @@ const villages = [
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "Search", href: "/search" },
+  { label: "Directory", href: "/directory" },
+  { label: "Contribute", href: "/contribute" },
   { label: "About", href: "/about" },
 ];
 
@@ -179,11 +181,27 @@ export function Navbar() {
             <div className="border-t border-stone-200 dark:border-stone-700 mt-2 pt-2 px-3">
               <Link
                 href="/auth/signin"
-                className="block w-full text-center py-2.5 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg"
+                className="block w-full text-center py-2.5 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg mb-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Sign In
               </Link>
+              <div className="flex gap-2">
+                <Link
+                  href="/dashboard"
+                  className="flex-1 text-center py-2 text-xs font-medium border border-stone-300 dark:border-stone-600 rounded-lg text-stone-600 dark:text-stone-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/admin"
+                  className="flex-1 text-center py-2 text-xs font-medium border border-stone-300 dark:border-stone-600 rounded-lg text-stone-600 dark:text-stone-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Admin
+                </Link>
+              </div>
             </div>
           </div>
         )}

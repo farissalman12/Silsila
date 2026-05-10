@@ -10,3 +10,4 @@ export { Skeleton, PersonCardSkeleton, VillageCardSkeleton, type SkeletonProps }
 export { ToastProvider, useToast } from "./Toast";
 export { Breadcrumb, type BreadcrumbProps, type BreadcrumbItem } from "./Breadcrumb";
 export { Tabs, type TabsProps, type TabItem } from "./Tabs";
+export { Textarea, type TextareaProps } from "./Textarea";
