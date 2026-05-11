@@ -5,6 +5,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { formatLifeSpan, formatYear } from "@/lib/utils";
+import { generatePersonJsonLd } from "@/lib/json-ld";
 import type { Metadata } from "next";
 
 interface PersonPageProps {
@@ -38,6 +39,27 @@ export default async function PersonPage({ params }: PersonPageProps) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <Breadcrumb items={breadcrumbItems} className="mb-6" />
+
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            generatePersonJsonLd({
+              fullName: person.fullName,
+              birthYear: person.birthYear,
+              deathYear: person.deathYear,
+              birthPlace: person.birthPlace,
+              deathPlace: person.deathPlace,
+              gender: person.gender,
+              isLiving: person.isLiving,
+              description: person.bio,
+              url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://silsila.app"}/person/${person.id}`,
+              imageUrl: person.photoUrl,
+            })
+          ),
+        }}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Profile */}

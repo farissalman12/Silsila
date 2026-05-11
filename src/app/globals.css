@@ -10,6 +10,11 @@
    ============================================================ */
 
 @layer base {
+  /* Smooth scroll — disabled when user prefers reduced motion */
+  html {
+    scroll-behavior: smooth;
+  }
+
   /* Base body styles */
   body {
     @apply bg-background-light dark:bg-background-dark text-stone-900 dark:text-stone-100;
@@ -26,6 +31,16 @@
   /* Focus visible styles */
   *:focus-visible {
     @apply outline-2 outline-offset-2 outline-amber-500;
+  }
+
+  /* Respect prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   /* Custom scrollbar */
@@ -78,5 +93,23 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* Print styles — clean output without nav/footer */
+@media print {
+  nav, footer, .skip-to-content, button {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  a {
+    text-decoration: underline;
+    color: inherit;
+  }
+  .dark {
+    color-scheme: light;
   }
 }

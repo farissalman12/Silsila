@@ -4,6 +4,7 @@ import { getVillageBySlug } from "@/lib/data/villages";
 import { searchPersons } from "@/lib/data/persons";
 import { PersonCard } from "@/components/PersonCard";
 import { Badge } from "@/components/ui/Badge";
+import { generateVillageJsonLd } from "@/lib/json-ld";
 import type { Metadata } from "next";
 
 interface VillagePageProps {
@@ -29,6 +30,23 @@ export default async function VillagePage({ params }: VillagePageProps) {
 
   return (
     <div>
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            generateVillageJsonLd({
+              name: village.name,
+              region: village.region,
+              lat: village.lat ? Number(village.lat) : null,
+              lng: village.lng ? Number(village.lng) : null,
+              description: village.historicalNotes,
+              url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://silsila.app"}/village/${village.slug}`,
+            })
+          ),
+        }}
+      />
+
       {/* Hero */}
       <section className="bg-gradient-to-br from-stone-800 to-stone-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
